@@ -7,102 +7,41 @@ output:
   word_document: default
 ---
 
-## The Exponential Distribution - A Simulation Exercise
+## Predicting Exercise Quality from Motion Sensor Data
 
 ### Overview
-The Exponential Distribution can be used to model events with an arrival rate typically denoted by a parameter lambda.  For such a distribution, the mean is given as 1/lambda, and the standard deviation is also given as 1/lambda (see this [Wikipedia entry](https://en.wikipedia.org/wiki/Exponential_distribution#Mean.2C_variance.2C_moments_and_median) for derivation.)  The R programming language can be used to simulate samples from the Exponential Distribution, and those samples can be analyzed to determine their mean, variance, and distribution.  To assess the quality of the simulation, comparisons to theoretical prediction are made.
+Use of devices to track exercise activity is becoming increasingly popular, with sales growing as costs decrease and software becomes more feature-rich.  While considerable study has been conducted on the recognition of distinct activities (e.g., standing, climbing stairs), much far less analysis of the quality of exercise activity has been published.  To this end, [Groupware@LES](http://groupware.les.inf.puc-rio.br) has built a [data set](http://groupware.les.inf.puc-rio.br/static/WLE/WearableComputing_weight_lifting_exercises_biceps_curl_variations.csv) tracking motion of 6 subjects lifting weights properly and improperly, suitable for training and testing predictive models.  It is the goal of this project to build such a predictive model and assess its performance and accuracy.
 
-### Simulations
-Simulation data are generated from the R programming language's rexp() function.  Using a lambda value of 0.2 and drawing samples of size 40 from the exponential distribution, sample means are then computed for 100, 1,000, 10,000, and 100,000 simulations respectively.
-
-```{r simulationDataProcessing, echo=TRUE}
-lambda <- 0.2
-sampleSize <- 40
-
-means100 <- NULL
-means1000 <- NULL
-means10000 <- NULL
-means100000 <- NULL
-
-for (i in 1 : 100) means100 <- c(means100, mean(rexp(sampleSize, lambda)))
-for (i in 1 : 1000) means1000 <- c(means1000, mean(rexp(sampleSize, lambda)))
-for (i in 1 : 10000) means10000 <- c(means10000, mean(rexp(sampleSize, lambda)))
-for (i in 1 : 100000) means100000 <- c(means100000, mean(rexp(sampleSize, lambda)))
+```{r libraries, echo=TRUE}
+library(caret)
 ```
 
-### Results
-We expect that the sample means drawn from rexp() to tend to a mean of 5.0 (= 1/lambda = 1/0.2), and by the Central Limit Theorem, we expect that the sample mean distribution will become increasingly normal, clustering around the population mean of 5.0.  Taking the means, standard deviations, and variances from the simulations yields the following results
+### Loading Data
+The Groupware@LES data used for this project (published in [Qualitative Activity Recognition of Weight Lifting Exercises](http://groupware.les.inf.puc-rio.br/work.jsf?p1=11201)) have been nicely partitioned with a large set of features (>150) to be used to predict a labelled outcome.  Each observation in this data set has been labelled A, B, C, D, or E, signifying correct lifting motion, elbows-forward lifting motion, halfway up lifting motion, halfway down lifting motion, and hips-forward lifting motion respectively.  The features present in the data set along with the label contained in the last column ('classe') are as shown:
 
-#### Sample Mean versus Theoretical Mean
-```{r sampleMeanVersusTheoreticalMean, echo=TRUE}
-means <- c(mean(means100),mean(means1000),mean(means10000),mean(means100000))
-means
+```{r loadingData, echo=TRUE}
+harTrainingDataRaw <- read.csv("pml-training.csv")
+harTestingDataRaw <- read.csv("pml-testing.csv")
 ```
 
-#### Sample Variance versus Theoretical Variance
-```{r sampleVarianceVersusTheoreticalVariance , echo=TRUE}
-stddevs <- c(sd(means100),sd(means1000),sd(means10000),sd(means100000))
-stddevs
-variances <- stddevs * stddevs
-variances
+### Cleaning Data
+After loading, the data used in this analysis was then cleaned so that it was more readily consumable by functions in the R language's caret package.  In the training data set, first the row number, user name, raw timestamp (parts 1 and 2), cvtd timestamp, new window, and num window columns (columns 1 through 7) were removed, as we have not yet covered time series prediction.  Then, remaining predictor columns were converted to character so that missing values (""), "NA"" values, and "#DIV/0!" values could be substituted with "0". Also, kurtosis yaw belt, skewness yaw belt, amplitude yaw belt, kurtosis yaw dumbbell, skewness yaw dumbbell, amplitude yaw dumbbell, kurtosis yaw forearm, skewness yaw forearm, amplitude yaw forearm all had no variance and thus were not useful for prediction and so were also discarded.  Finally, all columns except the classe label were converted to numeric, and the the classe label column was converted to a factor.
+```{r cleanData, echo=TRUE}
+harTrainingData <- harTrainingDataRaw[,-1:-7]
+na_var <- apply(!is.na(harTrainingData),2,sum) #identifying the no of NAs in each column
+na_var <- na_var == nrow(harTrainingData)  #Identifying columns that don't have complete data without NA
+harTrainingData2 <- harTrainingData[ , na_var]  #Filtering out variables with NA values
+harTrainingData3 <- harTrainingData2[,-nearZeroVar(harTrainingData2)]
 ```
 
-#### Distribution
-Histograms of the sample means for each of the simulations illustrate this behavior.
+### Model Development
+The R language's caret package contains a strong set of tools useful for building predictive models.  With such a large set of features, it is helpful to separate those that are useful for making predictions from those that are not.  The "helpful" features are referred to as Principal Components, and can be determined using the Principal Component Analysis capabilties provided in the R caret package.
 
-```{r simulationHistograms, echo=TRUE}
-hist(means100, main="Sample means of rexp() - 100 samples of 40 points", ylab="count", xlab="sample mean")
-hist(means1000, main="Sample means of rexp() - 1,000 samples of 40 points", ylab="count", xlab="sample mean")
-hist(means10000, main="Sample means of rexp() - 10,000 samples of 40 points", ylab="count", xlab="sample mean")
-hist(means100000, main="Sample means of rexp() - 100,000 samples of 40 points", ylab="count", xlab="sample mean")
-```
+Before we begin, the harTrainingData set itself must be split into training and test data.
 
-## Basic Inferential Data Analysis - Tooth Growth
-
-### Overview
-The Exponential Distribution can be used to model events with an arrival rate typically denoted by a parameter lambda.  For such a distribution, the mean is given as 1/lambda, and the standard deviation is also given as 1/lambda (see this [Wikipedia entry](https://en.wikipedia.org/wiki/Exponential_distribution#Mean.2C_variance.2C_moments_and_median) for derivation.)  The R programming language can be used to simulate samples from the Exponential Distribution, and those samples can be analyzed to determine their mean, variance, and distribution.  To assess the quality of the simulation, comparisons to theoretical prediction are made.
-
-### Simulations
-Simulation data are generated from the R programming language's rexp() function.  Using a lambda value of 0.2 and drawing samples of size 40 from the exponential distribution, sample means are then computed for 100, 1,000, 10,000, and 100,000 simulations respectively.
-
-```{r analysisDataProcessing, echo=TRUE}
-lambda <- 0.2
-sampleSize <- 40
-
-means100 <- NULL
-means1000 <- NULL
-means10000 <- NULL
-means100000 <- NULL
-
-for (i in 1 : 100) means100 <- c(means100, mean(rexp(sampleSize, lambda)))
-for (i in 1 : 1000) means1000 <- c(means1000, mean(rexp(sampleSize, lambda)))
-for (i in 1 : 10000) means10000 <- c(means10000, mean(rexp(sampleSize, lambda)))
-for (i in 1 : 100000) means100000 <- c(means100000, mean(rexp(sampleSize, lambda)))
-```
-
-### Results
-We expect that the sample means drawn from rexp() to tend to a mean of 5.0 (= 1/lambda = 1/0.2), and by the Central Limit Theorem, we expect that the sample mean distribution will become increasingly normal, clustering around the population mean of 5.0.  Taking the means, standard deviations, and variances from the simulations yields the following results
-
-#### Sample Mean versus Theoretical Mean
-```{r analysisMeanVersusTheoreticalMean, echo=TRUE}
-means <- c(mean(means100),mean(means1000),mean(means10000),mean(means100000))
-means
-```
-
-#### Sample Variance versus Theoretical Variance
-```{r analysisVarianceVersusTheoreticalVariance , echo=TRUE}
-stddevs <- c(sd(means100),sd(means1000),sd(means10000),sd(means100000))
-stddevs
-variances <- stddevs * stddevs
-variances
-```
-
-#### Distribution
-Histograms of the sample means for each of the simulations illustrate this behavior.
-
-```{r analysisHistograms, echo=TRUE}
-hist(means100, main="Sample means of rexp() - 100 samples of 40 points", ylab="count", xlab="sample mean")
-hist(means1000, main="Sample means of rexp() - 1,000 samples of 40 points", ylab="count", xlab="sample mean")
-hist(means10000, main="Sample means of rexp() - 10,000 samples of 40 points", ylab="count", xlab="sample mean")
-hist(means100000, main="Sample means of rexp() - 100,000 samples of 40 points", ylab="count", xlab="sample mean")
+```{r principalComponentAnalysis, echo=TRUE}
+inTrain = createDataPartition(y = harTrainingData3$classe, p = 0.7, list = FALSE)
+trainModel <- harTrainingData3[inTrain,]
+testModel <- harTrainingData3[-inTrain,]
+randomForestModel = train(classe ~ ., method = "rf", data = harTrainingData3)
 ```
