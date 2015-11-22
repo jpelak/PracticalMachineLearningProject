@@ -30,27 +30,29 @@ The Groupware@LES data used for this project (published in [Qualitative Activity
 
 ```r
 harTrainingDataRaw <- read.csv("pml-training.csv")
-harTestingDataRaw <- read.csv("pml-testing.csv")
 ```
 
 ### Cleaning Data
-After loading, the data used in this analysis was then cleaned so that it was more readily consumable by functions in the R language's caret package.  In the training data set, first the row number, user name, raw timestamp (parts 1 and 2), cvtd timestamp, new window, and num window columns (columns 1 through 7) were removed, as we have not yet covered time series prediction.  Then, remaining predictor columns were converted to character so that missing values (""), "NA"" values, and "#DIV/0!" values could be substituted with "0". Also, kurtosis yaw belt, skewness yaw belt, amplitude yaw belt, kurtosis yaw dumbbell, skewness yaw dumbbell, amplitude yaw dumbbell, kurtosis yaw forearm, skewness yaw forearm, amplitude yaw forearm all had no variance and thus were not useful for prediction and so were also discarded.  Finally, all columns except the classe label were converted to numeric, and the the classe label column was converted to a factor.
+After loading, the data used in this analysis was then cleaned so that it was more readily consumable by functions in the R language's caret package.  In the training data set, first the row number, user name, raw timestamp (parts 1 and 2), cvtd timestamp, new window, and num window columns (columns 1 through 7) were removed, as we have not yet covered time series prediction.  Then, remaining predictor columns were tested for NA values and filtered out.  Finally, all columns with near zero varaince (like kurtosis yaw belt, skewness yaw belt, amplitude yaw belt, kurtosis yaw dumbbell, skewness yaw dumbbell, amplitude yaw dumbbell, kurtosis yaw forearm, skewness yaw forearm, and amplitude yaw forearm) were all eliminated.
+
 
 ```r
 harTrainingData <- harTrainingDataRaw[,-1:-7]
-harTrainingData <- data.frame(lapply(harTrainingData, as.character), stringsAsFactors = FALSE)
-harTrainingData[is.na(harTrainingData)] <- "0"
-harTrainingData[is.null(harTrainingData)] <- "0"
-harTrainingData[harTrainingData == "#DIV/0!"] <- "0"
-harTrainingData[harTrainingData == ""] <- "0"
-harTrainingData <- subset(harTrainingData, select=-c(kurtosis_yaw_belt, skewness_yaw_belt, amplitude_yaw_belt, kurtosis_yaw_dumbbell, skewness_yaw_dumbbell, amplitude_yaw_dumbbell, kurtosis_yaw_forearm, skewness_yaw_forearm, amplitude_yaw_forearm))
-harTrainingData[,-144] <- data.frame(lapply(harTrainingData[,-144], as.numeric))
-harTrainingData$classe <- as.factor(harTrainingData$classe)
+na_var <- apply(!is.na(harTrainingData),2,sum) #identifying the no of NAs in each column
+na_var <- na_var == nrow(harTrainingData)  #Identifying columns that don't have complete data without NA
+harTrainingData2 <- harTrainingData[ , na_var]  #Filtering out variables with NA values
+harTrainingData3 <- harTrainingData2[,-nearZeroVar(harTrainingData2)]
 ```
 
 ### Model Development
-The R language's caret package contains a strong set of tools useful for building predictive models.  With such a large set of features, it is helpful to separate those that are useful for making predictions from those that are not.  The "helpful" features are referred to as Principal Components, and can be determined using the Principal Component Analysis capabilties provided in the R caret package.
-
-Before we begin, the harTrainingData set itself must be split into training and test data.
+The R language's caret package contains a strong set of tools useful for building predictive models.  Even with a filtered data set, such a large set of features took too much time for my machine to complete generating the predictive model in time for this submission.  Course discussion forums suggest that the Random Forest model yields good results for making these predictions, and so I will run the model generation and submit my predicted results before the end of the course.
 
 
+```r
+inTrain = createDataPartition(y = harTrainingData3$classe, p = 0.7, list = FALSE)
+trainModel <- harTrainingData3[inTrain,]
+testModel <- harTrainingData3[-inTrain,]
+#randomForestModel = train(classe ~ ., method = "rf", data = harTrainingData3)
+```
+
+I will complete the predictions on the test data by the end of the course.
