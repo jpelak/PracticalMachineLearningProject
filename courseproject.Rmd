@@ -1,0 +1,108 @@
+---
+title: "Practical Machine Learning - Course Project"
+author: by John Pelak
+output:
+  html_document:
+    keep_md: yes
+  word_document: default
+---
+
+## The Exponential Distribution - A Simulation Exercise
+
+### Overview
+The Exponential Distribution can be used to model events with an arrival rate typically denoted by a parameter lambda.  For such a distribution, the mean is given as 1/lambda, and the standard deviation is also given as 1/lambda (see this [Wikipedia entry](https://en.wikipedia.org/wiki/Exponential_distribution#Mean.2C_variance.2C_moments_and_median) for derivation.)  The R programming language can be used to simulate samples from the Exponential Distribution, and those samples can be analyzed to determine their mean, variance, and distribution.  To assess the quality of the simulation, comparisons to theoretical prediction are made.
+
+### Simulations
+Simulation data are generated from the R programming language's rexp() function.  Using a lambda value of 0.2 and drawing samples of size 40 from the exponential distribution, sample means are then computed for 100, 1,000, 10,000, and 100,000 simulations respectively.
+
+```{r simulationDataProcessing, echo=TRUE}
+lambda <- 0.2
+sampleSize <- 40
+
+means100 <- NULL
+means1000 <- NULL
+means10000 <- NULL
+means100000 <- NULL
+
+for (i in 1 : 100) means100 <- c(means100, mean(rexp(sampleSize, lambda)))
+for (i in 1 : 1000) means1000 <- c(means1000, mean(rexp(sampleSize, lambda)))
+for (i in 1 : 10000) means10000 <- c(means10000, mean(rexp(sampleSize, lambda)))
+for (i in 1 : 100000) means100000 <- c(means100000, mean(rexp(sampleSize, lambda)))
+```
+
+### Results
+We expect that the sample means drawn from rexp() to tend to a mean of 5.0 (= 1/lambda = 1/0.2), and by the Central Limit Theorem, we expect that the sample mean distribution will become increasingly normal, clustering around the population mean of 5.0.  Taking the means, standard deviations, and variances from the simulations yields the following results
+
+#### Sample Mean versus Theoretical Mean
+```{r sampleMeanVersusTheoreticalMean, echo=TRUE}
+means <- c(mean(means100),mean(means1000),mean(means10000),mean(means100000))
+means
+```
+
+#### Sample Variance versus Theoretical Variance
+```{r sampleVarianceVersusTheoreticalVariance , echo=TRUE}
+stddevs <- c(sd(means100),sd(means1000),sd(means10000),sd(means100000))
+stddevs
+variances <- stddevs * stddevs
+variances
+```
+
+#### Distribution
+Histograms of the sample means for each of the simulations illustrate this behavior.
+
+```{r simulationHistograms, echo=TRUE}
+hist(means100, main="Sample means of rexp() - 100 samples of 40 points", ylab="count", xlab="sample mean")
+hist(means1000, main="Sample means of rexp() - 1,000 samples of 40 points", ylab="count", xlab="sample mean")
+hist(means10000, main="Sample means of rexp() - 10,000 samples of 40 points", ylab="count", xlab="sample mean")
+hist(means100000, main="Sample means of rexp() - 100,000 samples of 40 points", ylab="count", xlab="sample mean")
+```
+
+## Basic Inferential Data Analysis - Tooth Growth
+
+### Overview
+The Exponential Distribution can be used to model events with an arrival rate typically denoted by a parameter lambda.  For such a distribution, the mean is given as 1/lambda, and the standard deviation is also given as 1/lambda (see this [Wikipedia entry](https://en.wikipedia.org/wiki/Exponential_distribution#Mean.2C_variance.2C_moments_and_median) for derivation.)  The R programming language can be used to simulate samples from the Exponential Distribution, and those samples can be analyzed to determine their mean, variance, and distribution.  To assess the quality of the simulation, comparisons to theoretical prediction are made.
+
+### Simulations
+Simulation data are generated from the R programming language's rexp() function.  Using a lambda value of 0.2 and drawing samples of size 40 from the exponential distribution, sample means are then computed for 100, 1,000, 10,000, and 100,000 simulations respectively.
+
+```{r analysisDataProcessing, echo=TRUE}
+lambda <- 0.2
+sampleSize <- 40
+
+means100 <- NULL
+means1000 <- NULL
+means10000 <- NULL
+means100000 <- NULL
+
+for (i in 1 : 100) means100 <- c(means100, mean(rexp(sampleSize, lambda)))
+for (i in 1 : 1000) means1000 <- c(means1000, mean(rexp(sampleSize, lambda)))
+for (i in 1 : 10000) means10000 <- c(means10000, mean(rexp(sampleSize, lambda)))
+for (i in 1 : 100000) means100000 <- c(means100000, mean(rexp(sampleSize, lambda)))
+```
+
+### Results
+We expect that the sample means drawn from rexp() to tend to a mean of 5.0 (= 1/lambda = 1/0.2), and by the Central Limit Theorem, we expect that the sample mean distribution will become increasingly normal, clustering around the population mean of 5.0.  Taking the means, standard deviations, and variances from the simulations yields the following results
+
+#### Sample Mean versus Theoretical Mean
+```{r analysisMeanVersusTheoreticalMean, echo=TRUE}
+means <- c(mean(means100),mean(means1000),mean(means10000),mean(means100000))
+means
+```
+
+#### Sample Variance versus Theoretical Variance
+```{r analysisVarianceVersusTheoreticalVariance , echo=TRUE}
+stddevs <- c(sd(means100),sd(means1000),sd(means10000),sd(means100000))
+stddevs
+variances <- stddevs * stddevs
+variances
+```
+
+#### Distribution
+Histograms of the sample means for each of the simulations illustrate this behavior.
+
+```{r analysisHistograms, echo=TRUE}
+hist(means100, main="Sample means of rexp() - 100 samples of 40 points", ylab="count", xlab="sample mean")
+hist(means1000, main="Sample means of rexp() - 1,000 samples of 40 points", ylab="count", xlab="sample mean")
+hist(means10000, main="Sample means of rexp() - 10,000 samples of 40 points", ylab="count", xlab="sample mean")
+hist(means100000, main="Sample means of rexp() - 100,000 samples of 40 points", ylab="count", xlab="sample mean")
+```
